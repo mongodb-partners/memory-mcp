@@ -6,6 +6,8 @@ from services.bedrock_service import get_bedrock_service
 from services.external.tavily_service import search_web
 from utils.serializers import serialize_mongodb_doc
 from src.core.logger import logger
+import os
+from typing import Optional
 
 def register_search_tools(mcp: FastMCP):
     """Register search-related tools."""
@@ -21,18 +23,39 @@ def register_search_tools(mcp: FastMCP):
         """,
     )
     async def hybrid_search(
-        connection_string: str,
-        database_name: str,
-        collection_name: str,
-        fulltext_search_field: str,
-        vector_search_index_name: str,
-        vector_search_field: str,
         query: str,
         user_id: str,
+        connection_string: Optional[str] = None,
+        database_name: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        fulltext_search_field: Optional[str] = None,
+        vector_search_index_name: Optional[str] = None,
+        vector_search_field: Optional[str] = None,
         weight: float = 0.5,
         limit: int = 10,
     ) -> Dict[str, List[Dict[str, Any]]]:
-        """Perform a hybrid search operation on MongoDB by combining full-text and vector (semantic) search results."""
+        # Use provided parameters or fall back to environment variables
+        connection_string = connection_string or os.getenv('MONGODB_CONNECTION_STRING')
+        database_name = database_name or os.getenv('MONGODB_DATABASE_NAME')
+        collection_name = collection_name or os.getenv('MONGODB_COLLECTION_NAME')
+        fulltext_search_field = fulltext_search_field or os.getenv('MONGODB_FULLTEXT_SEARCH_FIELD')
+        vector_search_index_name = vector_search_index_name or os.getenv('MONGODB_VECTOR_SEARCH_INDEX_NAME')
+        vector_search_field = vector_search_field or os.getenv('MONGODB_VECTOR_SEARCH_FIELD')
+        
+        # Validate that all required parameters are available
+        required_params = {
+            'connection_string': connection_string,
+            'database_name': database_name,
+            'collection_name': collection_name,
+            'fulltext_search_field': fulltext_search_field,
+            'vector_search_index_name': vector_search_index_name,
+            'vector_search_field': vector_search_field,
+        }
+        
+        missing_params = [name for name, value in required_params.items() if not value]
+        if missing_params:
+            raise ValueError(f"Missing required parameters: {', '.join(missing_params)}. "
+                            f"Please provide them as function arguments or set corresponding environment variables.")
         
         limit = int(limit)
         weight = float(weight)
@@ -41,7 +64,7 @@ def register_search_tools(mcp: FastMCP):
         embedding = bedrock_service.generate_embeddings([query])[0]
         mongodb_service = get_mongodb_service(connection_string, database_name)
         collection = mongodb_service.get_collection(collection_name)
-
+        
         pipeline = [
             {
                 "$search": {
@@ -129,7 +152,7 @@ def register_search_tools(mcp: FastMCP):
                 }
             },
         ]
-
+        
         # Execute the aggregation pipeline and return the results
         try:
             results = list(collection.aggregate(pipeline))

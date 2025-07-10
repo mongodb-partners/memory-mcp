@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import json
 import time
 import os
+
+
 async def extract_tool_response(result):
     """Extract text content from tool response and parse as JSON if possible."""
     response_data = {}
