@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+.DS_Store
+# macOS Finder specific file that stores custom attributes of a folder, such as icon position.
+# It is generally safe to ignore this file as it does not affect the functionality of the project

@@ -17,7 +17,7 @@
 
 ## 1. Overview
 
-Memory-MCP is a MongoDB-based Model Context Protocol (MCP) server that provides intelligent memory management, semantic caching, and hybrid search capabilities for AI applications. The system integrates with AWS Bedrock for embedding generation, MongoDB for data storage, and Tavily for web search functionality.
+MongoDB AI Application Program (MAAP) Memory-MCP is a MongoDB-based Model Context Protocol (MCP) server that provides intelligent memory management, semantic caching, and hybrid search capabilities for AI applications. The system integrates with AWS Bedrock for embedding generation, MongoDB for data storage, and Tavily for web search functionality.
 
 ### Key Features
 
@@ -956,3 +956,17 @@ docker-compose up -d --no-deps memory-mcp
 - Load balancing for high availability
 - Resource monitoring and auto-scaling
 - Database sharding for large datasets
+
+
+
+>**Note:** This repository contains a reference implementation intended for educational and exploratory purposes only. It is **not production-ready** in its current form.
+>
+> While the architecture and design patterns demonstrated here reflect best practices for building memory layers for agentic AI systems, the implementation may lack:
+>
+> * Comprehensive test coverage
+> * Robust error handling and validation
+> * Security hardening and access controls
+> * Performance optimizations for scale
+> * Long-term support or upgrade guarantees
+>
+> **Use this as a foundation** to guide your own production implementations, but ensure thorough validation and customization before deploying in real-world environments.
