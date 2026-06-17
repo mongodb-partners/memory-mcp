@@ -1,4 +1,4 @@
-# Memory-MCP — Agent Instructions
+# Memory-MCP: Agent Instructions
 
 Copy the relevant section below into your agent's instruction file (`CLAUDE.md`, `GEMINI.md`, `.cursorrules`, `copilot-instructions.md`, etc.) to give the coding agent persistent memory across conversations.
 
@@ -146,13 +146,13 @@ Need to find past context?
 
 ## Important Parameters
 
-- **`user_id`** — Required on every tool call. This scopes all data to the user. When auth is enabled, this is resolved from the token. When auth is disabled, the agent must supply it consistently.
-- **`conversation_id`** — Required on `store_memory`. Group messages from the same conversation together so they can be recalled as a unit.
-- **`tier`** — Optional filter on `recall_memory` and `hybrid_search`. Use `["ltm"]` for long-term memories only, `["stm"]` for recent short-term only, or omit for both.
-- **`tags`** — Optional filter. All specified tags must match (AND logic). Useful for categorizing memories by project, topic, or domain.
-- **`dry_run`** — On `delete_memory`, preview how many memories would be deleted without actually deleting.
-- **`confirm`** — Required for bulk `delete_memory` (by tags or time range) and for `wipe_user_data`. Prevents accidental mass deletion.
-- **`ttl_days`** — On `store_decision`, sets expiration in days. Omit for no expiration.
+- **`user_id`**: Required on every tool call. This scopes all data to the user. When auth is enabled, this is resolved from the token. When auth is disabled, the agent must supply it consistently.
+- **`conversation_id`**: Required on `store_memory`. Group messages from the same conversation together so they can be recalled as a unit.
+- **`tier`**: Optional filter on `recall_memory` and `hybrid_search`. Use `["ltm"]` for long-term memories only, `["stm"]` for recent short-term only, or omit for both.
+- **`tags`**: Optional filter. All specified tags must match (AND logic). Useful for categorizing memories by project, topic, or domain.
+- **`dry_run`**: On `delete_memory`, preview how many memories would be deleted without actually deleting.
+- **`confirm`**: Required for bulk `delete_memory` (by tags or time range) and for `wipe_user_data`. Prevents accidental mass deletion.
+- **`ttl_days`**: On `store_decision`, sets expiration in days. Omit for no expiration.
 
 ---
 
@@ -161,7 +161,7 @@ Need to find past context?
 ### CLAUDE.md
 
 ```markdown
-# Memory-MCP — Persistent Memory
+# Memory-MCP: Persistent Memory
 
 This workspace is connected to a memory-mcp server that gives you persistent
 memory across conversations. Use memory-mcp tools to store and recall context.
@@ -201,7 +201,7 @@ memory across conversations. Use memory-mcp tools to store and recall context.
 ### GEMINI.md
 
 ```markdown
-# Memory-MCP — Persistent Memory
+# Memory-MCP: Persistent Memory
 
 A memory-mcp server provides persistent memory across conversations.
 Use these MCP tools to store and recall context.
@@ -215,16 +215,16 @@ Use these MCP tools to store and recall context.
 
 ## Tools (12)
 
-- store_memory — store conversation messages
-- recall_memory — semantic search over past memories
-- hybrid_search — vector + full-text search (broad topics)
-- delete_memory — soft-delete with dry_run preview
-- check_cache / store_cache — semantic response cache
-- cache_invalidate — clear stale cache entries
-- store_decision / recall_decision — persistent key-value preferences
-- memory_health — system health stats
-- wipe_user_data — permanent data deletion (requires confirm=true)
-- search_web — web search via Tavily
+- store_memory: store conversation messages
+- recall_memory: semantic search over past memories
+- hybrid_search: vector + full-text search (broad topics)
+- delete_memory: soft-delete with dry_run preview
+- check_cache / store_cache: semantic response cache
+- cache_invalidate: clear stale cache entries
+- store_decision / recall_decision: persistent key-value preferences
+- memory_health: system health stats
+- wipe_user_data: permanent data deletion (requires confirm=true)
+- search_web: web search via Tavily
 
 ALWAYS pass user_id consistently across all calls.
 Use recall_memory for specific queries. Use hybrid_search for broad topics.
@@ -233,7 +233,7 @@ Use recall_memory for specific queries. Use hybrid_search for broad topics.
 ### .cursorrules
 
 ```markdown
-# Memory-MCP — Persistent Memory
+# Memory-MCP: Persistent Memory
 
 Connected to memory-mcp server for persistent memory across conversations.
 
@@ -246,12 +246,12 @@ Connected to memory-mcp server for persistent memory across conversations.
 
 ## Tools
 
-- store_memory, recall_memory, delete_memory — memory lifecycle
-- hybrid_search — vector + full-text search
-- check_cache, store_cache, cache_invalidate — response cache
-- store_decision, recall_decision — persistent preferences
-- memory_health, wipe_user_data — admin
-- search_web — web search (requires Tavily API key)
+- store_memory, recall_memory, delete_memory: memory lifecycle
+- hybrid_search: vector + full-text search
+- check_cache, store_cache, cache_invalidate: response cache
+- store_decision, recall_decision: persistent preferences
+- memory_health, wipe_user_data: admin
+- search_web: web search (requires Tavily API key)
 
 Always pass user_id consistently. Use recall_memory for specific recall.
 Use hybrid_search for broad topic searches. Use dry_run before bulk deletions.
@@ -260,14 +260,14 @@ Use hybrid_search for broad topic searches. Use dry_run before bulk deletions.
 ### copilot-instructions.md
 
 ```markdown
-# Memory-MCP — Persistent Memory
+# Memory-MCP: Persistent Memory
 
 A memory-mcp MCP server provides persistent memory. Use these tools:
 
 ## Start of Conversation
 
-1. recall_decision(key="user_preferences") — load stored preferences
-2. recall_memory(query="<topic>") — load relevant past context
+1. recall_decision(key="user_preferences"): load stored preferences
+2. recall_memory(query="<topic>"): load relevant past context
 
 ## During Conversation
 

@@ -68,7 +68,7 @@ The server targets AI agents and LLM-based applications that need to remember pa
 
 **`BedrockLLMProvider`** (`providers/bedrock.py`)
 - Uses the Bedrock `converse()` API with Claude
-- Provides `assess_importance()` (returns 0.1–1.0) and `generate_summary()` methods
+- Provides `assess_importance()` (returns 0.1-1.0) and `generate_summary()` methods
 
 **`VoyageEmbeddingProvider`** (`providers/voyage.py`)
 - Uses `httpx.AsyncClient` for the Voyage AI REST API
@@ -81,7 +81,7 @@ The server targets AI agents and LLM-based applications that need to remember pa
 - **Store**: Creates STM documents with embeddings. Auto-creates LTM candidates for human messages >30 characters.
 - **Recall**: Vector search with deduplication of STM/LTM pairs, calibrated 3-component ranking, and access counter updates.
 - **Delete**: Soft-delete by ID, tags, or time range. Bulk deletes require `confirm=true`. Supports dry-run preview.
-- **Evolve**: Detects similar memories and either reinforces (>0.85 similarity), queues merge (0.70–0.85), or creates new.
+- **Evolve**: Detects similar memories and either reinforces (>0.85 similarity), queues merge (0.70-0.85), or creates new.
 
 **`CacheService`** (`services/cache.py`)
 - **Check**: Vector search on cached embeddings; returns hit if similarity >= threshold (default 0.95).
@@ -116,7 +116,7 @@ The server targets AI agents and LLM-based applications that need to remember pa
 - After each tool call completes, fires an async task to store the tool name, parameters, and response as an STM memory with `conversation_id="auto:<tool_name>"`.
 - Configurable via `AUTO_CAPTURE_ENABLED`, `AUTO_CAPTURE_TOOLS`, `AUTO_CAPTURE_MIN_LENGTH`, and `AUTO_CAPTURE_MAX_CONTENT_LENGTH`.
 - Excluded tools (`store_memory`, `wipe_user_data`, `delete_memory`, `cache_invalidate`) are never captured regardless of config.
-- Failures are logged but never propagated — auto-capture is strictly non-blocking.
+- Failures are logged but never propagated. Auto-capture is strictly non-blocking.
 
 **`DecisionService`** (`services/decision.py`)
 - Keyed key-value store for sticky decisions/preferences.
@@ -202,12 +202,12 @@ MCP Client
 EnrichmentWorker (continuous loop, every 30s)
   → Query: find memories where enrichment_status="pending", limit 50
   → For each memory (concurrency=5):
-    → LLM: assess_importance(content) → float (0.1–1.0)
+    → LLM: assess_importance(content) → float (0.1-1.0)
     → LLM: generate_summary(content) → string (≤100 words)
     → MemoryService.evolve_memory(user_id, content, embedding)
       → Vector search for similar LTM
       → >0.85 similarity: reinforce (boost importance 1.1×)
-      → 0.70–0.85: queue merge (enrichment_status="merge_pending")
+      → 0.70-0.85: queue merge (enrichment_status="merge_pending")
       → <0.70: create new memory
     → MongoDB update: enrichment_status="complete", importance, summary
 ```
@@ -216,7 +216,7 @@ EnrichmentWorker (continuous loop, every 30s)
 
 ```
 Server lifespan startup
-  → Stage 1: ensure_indexes() — standard B-tree indexes (blocking)
+  → Stage 1: ensure_indexes() creates standard B-tree indexes (blocking)
   → Stage 1b: Seed essential data (best-effort, non-fatal)
     → GovernanceService.seed_defaults() (if GOVERNANCE_ENABLED)
       → Upsert 3 profiles: admin, power_user, end_user
@@ -240,7 +240,7 @@ MCP Client
         → should_capture? (enabled, tool in list, not excluded, has user_id)
         → build_content(tool_name, params, response) → string (truncated to max_content_length)
         → MemoryService.store_stm(user_id, conversation_id="auto:<tool_name>", messages=[...])
-    ← result (unmodified — capture is fire-and-forget)
+    ← result (unmodified; capture is fire-and-forget)
 ```
 
 ## Key Design Decisions
@@ -248,7 +248,7 @@ MCP Client
 ### Single-process architecture
 
 **Context:** Phase 0 requires a working system with minimal operational complexity.
-**Decision:** Run everything — MCP server, enrichment worker, audit flushing — in a single FastMCP process.
+**Decision:** Run everything (MCP server, enrichment worker, audit flushing) in a single FastMCP process.
 **Rationale:** Eliminates inter-service communication, shared-nothing coordination, and deployment of multiple containers. The enrichment worker runs as an `asyncio.Task`, sharing the event loop.
 **Trade-offs:** Vertical scaling only. The enrichment worker competes for CPU with request handling. Acceptable at Phase 0 scale.
 
@@ -274,7 +274,7 @@ MCP Client
 
 **Context:** Atlas Search index creation can take minutes and may fail on non-Atlas deployments.
 **Decision:** Standard B-tree indexes are created synchronously at startup (Stage 1). Atlas Search indexes are created in a background task (Stage 2) that polls for readiness with a 120-second timeout.
-**Rationale:** The server becomes available after Stage 1 completes. If Stage 2 fails, the server runs without vector/FTS search — tools degrade but do not crash.
+**Rationale:** The server becomes available after Stage 1 completes. If Stage 2 fails, the server runs without vector/FTS search; tools degrade but do not crash.
 
 ### Startup seeding over LLM-dependent initialization
 
@@ -284,7 +284,7 @@ MCP Client
 
 ### Auto-capture over LLM-dependent memory storage
 
-**Context:** If the LLM never calls `store_memory`, the memory store remains empty and recall returns nothing — defeating the purpose of the system.
+**Context:** If the LLM never calls `store_memory`, the memory store remains empty and recall returns nothing, defeating the purpose of the system.
 **Decision:** Wrap MCP tools with middleware that automatically stores tool interactions as STM memories. Capture is fire-and-forget (async task, failures logged, never blocks the response).
 **Rationale:** Ensures the memory store is populated through normal usage even when the LLM does not cooperate. The auto-capture middleware is transparent to both the LLM and the tool implementation.
 

@@ -51,7 +51,7 @@ TRANSPORT=stdio memory-mcp
 
 Add one of the following to your MCP client's `mcp.json` (see `mcp.json.example`).
 
-**HTTP** — connect to a running server:
+**HTTP**: connect to a running server:
 
 ```json
 {
@@ -64,7 +64,7 @@ Add one of the following to your MCP client's `mcp.json` (see `mcp.json.example`
 }
 ```
 
-**Stdio** — launch as a subprocess:
+**Stdio**: launch as a subprocess:
 
 ```json
 {
@@ -92,7 +92,7 @@ Add one of the following to your MCP client's `mcp.json` (see `mcp.json.example`
 - **Memory evolution**: Automatic reinforcement of similar memories and merge detection
 - **Auto-capture**: Transparent middleware that automatically stores tool interactions as STM memories, ensuring the memory store is populated even when the LLM does not call `store_memory`
 - **Calibrated ranking**: Three-component scoring combining recency, importance, and relevance
-- **Startup seeding**: Governance profiles, prompt templates, and system decisions are seeded to the database at startup — no LLM intervention required for the system to be fully functional
+- **Startup seeding**: Governance profiles, prompt templates, and system decisions are seeded to the database at startup, so no LLM intervention is required for the system to be fully functional
 - **Authentication**: API key and HS256 JWT authentication with optional governance and rate limiting
 - **Governance-aware rate limiting**: Per-role request quotas derived from governance profiles (admin, power_user, end_user), with automatic fallback to global defaults
 - **Audit logging**: Buffered audit trail for all operations with periodic background flush and configurable flush strategies
@@ -125,17 +125,17 @@ See [docs/api-reference.md](docs/api-reference.md) for full tool signatures and 
 
 Memory-MCP runs as a single FastMCP process with the following internal services:
 
-- **MemoryService** — STM/LTM storage, recall with calibrated ranking, soft-delete
-- **CacheService** — Semantic cache with vector similarity lookup
-- **AuditService** — Buffered audit logging with MongoDB persistence and local file fallback
-- **AuditFlushWorker** — Periodic background task that flushes audit entries, preventing data loss on crash
-- **EnrichmentWorker** — Background async task for LTM importance assessment, summarization, and memory evolution
-- **ConsolidationWorker** — Background task for STM compression, forgetting, and STM-to-LTM promotion
-- **AutoCaptureMiddleware** — Wraps MCP tools to automatically store interactions as STM memories
-- **DecisionService** — Keyed key-value store for sticky decisions with optional TTL; seeds system defaults at startup
-- **GovernanceService** — Role-based access policies (optional, via `GOVERNANCE_ENABLED`); seeds default profiles at startup
-- **RateLimiter** — Per-user sliding-window rate limiting with governance-aware per-role limits (optional, via `RATE_LIMIT_ENABLED`)
-- **PromptLibrary** — Versioned prompt templates for enrichment prompts; seeds default templates at startup
+- **MemoryService**: STM/LTM storage, recall with calibrated ranking, soft-delete
+- **CacheService**: Semantic cache with vector similarity lookup
+- **AuditService**: Buffered audit logging with MongoDB persistence and local file fallback
+- **AuditFlushWorker**: Periodic background task that flushes audit entries, preventing data loss on crash
+- **EnrichmentWorker**: Background async task for LTM importance assessment, summarization, and memory evolution
+- **ConsolidationWorker**: Background task for STM compression, forgetting, and STM-to-LTM promotion
+- **AutoCaptureMiddleware**: Wraps MCP tools to automatically store interactions as STM memories
+- **DecisionService**: Keyed key-value store for sticky decisions with optional TTL; seeds system defaults at startup
+- **GovernanceService**: Role-based access policies (optional, via `GOVERNANCE_ENABLED`); seeds default profiles at startup
+- **RateLimiter**: Per-user sliding-window rate limiting with governance-aware per-role limits (optional, via `RATE_LIMIT_ENABLED`)
+- **PromptLibrary**: Versioned prompt templates for enrichment prompts; seeds default templates at startup
 
 Embedding and LLM operations are handled by pluggable providers (AWS Bedrock, Voyage AI). MongoDB Atlas provides vector search, full-text search, and TTL-based document expiration. Authentication supports static API keys and HS256 JWTs (optional, via `AUTH_ENABLED`).
 

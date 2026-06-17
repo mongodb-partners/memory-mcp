@@ -66,7 +66,6 @@ class TestPyprojectToml:
             "memory_mcp/providers",
             "memory_mcp/services",
             "memory_mcp/tools",
-            "memory_mcp/utils",
         ]
         for target in expected_targets:
             assert target in force.values(), f"Missing force-include target: {target}"

@@ -41,7 +41,6 @@ packages = []
 "services" = "memory_mcp/services"
 "tools" = "memory_mcp/tools"
 "auth" = "memory_mcp/auth"
-"utils" = "memory_mcp/utils"
 
 [tool.coverage.report]
 exclude_lines = [

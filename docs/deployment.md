@@ -43,21 +43,22 @@ From `docker-compose.yml`:
 
 ### Dockerfile
 
-The image uses `python:3.11-slim`:
+The image uses `python:3.11-slim` and `uv` for dependency management:
 
-1. Installs `build-essential` for native dependencies
-2. Copies source files and `pyproject.toml`
-3. Runs `pip install --no-cache-dir .`
-4. Exposes port 8000
-5. Runs the `memory-mcp` command
+1. Copies the `uv` binary from the official `ghcr.io/astral-sh/uv` image
+2. Copies `pyproject.toml` and `uv.lock` first (for Docker layer caching)
+3. Copies the source files needed by the build
+4. Installs dependencies from the locked graph with `uv sync --frozen`
+5. Exposes port 8000
+6. Runs `uv run memory-mcp`
 
 ## Deploy without Docker
 
-Install the package and run directly:
+Install dependencies and run directly:
 
 ```bash
-pip install .
-memory-mcp
+uv sync
+uv run memory-mcp
 ```
 
 The server listens on `0.0.0.0:8000` with Streamable HTTP transport.
@@ -94,9 +95,9 @@ Memory-MCP requires a MongoDB Atlas cluster with the following:
 2. **Collections**: Created automatically on first use: `memories`, `semantic_cache`, `audit_log`, `decisions`, `rate_limits`, `governance_profiles`, `prompts`
 3. **Standard indexes**: Created automatically at server startup (Stage 1)
 4. **Atlas Search indexes**: Created automatically in the background (Stage 2). Three indexes:
-   - `memories_vector_index` — Vector search on `embedding` field (1536 dimensions, cosine similarity)
-   - `memories_fts_index` — Full-text search on `content` and `summary` fields
-   - `cache_vector_index` — Vector search on cache embeddings
+   - `memories_vector_index`: Vector search on `embedding` field (1536 dimensions, cosine similarity)
+   - `memories_fts_index`: Full-text search on `content` and `summary` fields
+   - `cache_vector_index`: Vector search on cache embeddings
 
 If Atlas Search index creation fails (e.g., on a non-Atlas deployment), the server continues running. The `hybrid_search` tool and vector-based `recall_memory` require these indexes to function.
 
@@ -153,7 +154,7 @@ When a request arrives with `Authorization: Bearer <token>`:
 
 ### Client configuration
 
-**HTTP mode** — pass the token in the `headers` field of `mcp.json`:
+**HTTP mode**: pass the token in the `headers` field of `mcp.json`:
 
 ```json
 {
@@ -169,7 +170,7 @@ When a request arrives with `Authorization: Bearer <token>`:
 }
 ```
 
-**Stdio mode** — pass auth config as environment variables:
+**Stdio mode**: pass auth config as environment variables:
 
 ```json
 {
@@ -256,7 +257,7 @@ On startup, the server seeds essential data to the database (Stage 1b, after ind
 | Prompt templates (importance_assessment, summary_generation, merge_prompt) | `prompts` | Always | 3 |
 | System decisions (system:governance_profile, system:prompt_experiment) | `decisions` | Always | 2 |
 
-Seeding is idempotent — existing records are not overwritten. Failures are logged but non-fatal; the server continues startup.
+Seeding is idempotent: existing records are not overwritten. Failures are logged but non-fatal; the server continues startup.
 
 ### Auto-Capture
 

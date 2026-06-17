@@ -17,7 +17,6 @@ COPY providers/ providers/
 COPY services/ services/
 COPY tools/ tools/
 COPY auth/ auth/
-COPY utils/ utils/
 
 # Install dependencies using locked graph
 RUN uv sync --frozen

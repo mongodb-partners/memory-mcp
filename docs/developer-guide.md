@@ -11,7 +11,7 @@
 ```bash
 git clone https://github.com/mongodb-partners/memory-mcp.git
 cd memory-mcp
-pip install -e ".[dev]"
+uv sync --extra dev
 ```
 
 Copy the environment template and configure credentials:
@@ -25,7 +25,7 @@ Edit `.env` with your MongoDB Atlas connection string and AWS credentials. See [
 ## Running Locally
 
 ```bash
-memory-mcp
+uv run memory-mcp
 ```
 
 The server starts on `http://0.0.0.0:8000` using Streamable HTTP transport. On startup it:
@@ -118,16 +118,16 @@ tests/
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run a specific test file
-pytest tests/unit/test_memory_service.py
+uv run pytest tests/unit/test_memory_service.py
 
 # Run tests with verbose output
-pytest -v
+uv run pytest -v
 
 # Run a specific test by name
-pytest -k "test_store_stm"
+uv run pytest -k "test_store_stm"
 ```
 
 Tests use `pytest-asyncio` with `asyncio_mode = "auto"`. All MongoDB operations are mocked with `AsyncMock`. No running database is required for unit tests.
@@ -152,8 +152,7 @@ Tests use `pytest-asyncio` with `asyncio_mode = "auto"`. All MongoDB operations 
 Build a distributable wheel:
 
 ```bash
-pip install build
-python -m build
+uv build
 ```
 
 The wheel is output to `dist/`. The package name is `memory-mcp` and the installable command is `memory-mcp`.

@@ -382,7 +382,7 @@ Permanently delete ALL data for a user (memories, cache, audit log). This action
 **Behavior:**
 - Hard-deletes from `memories`, `cache`, and `audit_log` collections
 - Requires `confirm=true`; returns an error otherwise
-- Irreversible — data cannot be recovered
+- Irreversible: data cannot be recovered
 
 ---
 
@@ -448,7 +448,7 @@ Store a keyed decision for a user. Decisions persist across conversations with c
 | `user_id` | string | The user who stored the decision |
 
 **Behavior:**
-- Upserts by `(user_id, key)` — storing the same key again overwrites the value
+- Upserts by `(user_id, key)`: storing the same key again overwrites the value
 - `action` indicates whether the decision was newly created or updated
 - When `ttl_days` is set, the decision auto-expires after that many days via MongoDB TTL index
 
