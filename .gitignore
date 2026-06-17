@@ -95,10 +95,8 @@ ipython_config.py
 #Pipfile.lock
 
 # UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+#   uv.lock is tracked in version control for deterministic installs.
+#   This project is an application (MCP server), not a library.
 
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
@@ -210,3 +208,8 @@ __marimo__/
 .DS_Store
 # macOS Finder specific file that stores custom attributes of a folder, such as icon position.
 # It is generally safe to ignore this file as it does not affect the functionality of the project
+
+
+misc/
+
+test_results/

@@ -1,77 +1,124 @@
-from typing import Any, Dict, Optional
-import httpx
-from fastmcp import FastMCP
-from src.core import config
-from src.core.logger import logger
-from utils.validators import validate_user_id, validate_message_type
+"""MCP Memory Tools — store, recall, delete."""
 
-def register_memory_tools(mcp: FastMCP):
-    """Register memory-related tools."""
-    
-    @mcp.tool(name="store_memory", description="Store a message in AI memory")
-    async def store_memory(
-        conversation_id: str,
-        text: str,
-        message_type: str,
-        user_id: str,
-        timestamp: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Add a message to conversation history."""
-        
-        user_id = validate_user_id(user_id)
-        message_type = validate_message_type(message_type)
+import time
 
-        payload = {
-            "user_id": user_id,
-            "conversation_id": conversation_id,
-            "type": message_type,
-            "text": text,
-        }
+from memory_mcp.core.registry import ServiceRegistry
 
-        if timestamp:
-            payload["timestamp"] = timestamp
 
-        client = httpx.AsyncClient(timeout=300.0)
-        try:
-            response = await client.post(
-                f"{config.AI_MEMORY_SERVICE_URL}/conversation/", json=payload
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            logger.error(
-                f"Error adding message to memory: {e.response.status_code} - {e.response.text}"
-            )
-            return {"error": str(e)}
+def register_memory_tools(mcp):
+    """Register memory MCP tools on the FastMCP server."""
 
     @mcp.tool(
-        name="retrieve_memory",
-        description="Get relevant AI memory with context and summary",
+        name="store_memory",
+        description=(
+            "Store conversation messages as short-term memories. "
+            "For human messages >30 chars, also creates long-term memory candidates."
+        ),
     )
-    async def retrieve_memory(user_id: str, text: str) -> Dict[str, Any]:
-        """Comprehensive memory retrieval: finds relevant memories, context, and generates a summary."""
-
+    async def store_memory(
+        user_id: str,
+        conversation_id: str,
+        messages: list[dict],
+    ) -> dict:
+        svc = ServiceRegistry.get()
+        access_err = await svc.check_access(user_id, "store_memory")
+        if access_err:
+            return {"error": access_err}
+        start = time.time()
         try:
-            user_id = validate_user_id(user_id)
-            params = {"user_id": user_id, "text": text}
-
-            client = httpx.AsyncClient(timeout=1000.0)
-            response = await client.get(
-                f"{config.AI_MEMORY_SERVICE_URL}/retrieve_memory/", params=params
+            # Normalize messages: accept "role" or "message_type"
+            for msg in messages:
+                if "message_type" not in msg:
+                    msg["message_type"] = msg.get("role", "human")
+            stm_ids = await svc.memory_service.store_stm(user_id, conversation_id, messages)
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:write", "store_memory", "success", duration_ms,
+                conversation_id=conversation_id, count=len(messages),
             )
-            response.raise_for_status()
-            return {
-                "related_conversation": response.json().get("related_conversation", ""),
-                "conversation_summary": response.json().get("conversation_summary", ""),
-                "similar_memories": response.json().get("similar_memories", ""),
-            }
-
-        except httpx.HTTPError as e:
-            logger.error(
-                f"Error retrieving memory: {e.response.status_code} - {e.response.text}"
+            return {"stm_ids": stm_ids, "count": len(stm_ids)}
+        except Exception as e:
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:write", "store_memory", "error", duration_ms,
+                error=str(e),
             )
-            return {
-                "related_conversation": f"Error retrieving memory: {e.response.status_code} - {e.response.text}",
-                "conversation_summary": "",
-                "similar_memories": "",
-            }
+            raise
+
+    @mcp.tool(
+        name="recall_memory",
+        description=(
+            "Semantically search stored memories. Returns results ranked by "
+            "recency, importance, and relevance."
+        ),
+    )
+    async def recall_memory(
+        user_id: str,
+        query: str,
+        memory_type: str | None = None,
+        tags: list[str] | None = None,
+        limit: int = 10,
+        tier: list[str] | None = None,
+    ) -> dict:
+        svc = ServiceRegistry.get()
+        access_err = await svc.check_access(user_id, "recall_memory")
+        if access_err:
+            return {"error": access_err}
+        start = time.time()
+        try:
+            results = await svc.memory_service.recall(
+                user_id, query, tier=tier, memory_type=memory_type,
+                tags=tags, limit=limit,
+            )
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:read", "recall_memory", "success", duration_ms,
+                query=query, result_count=len(results),
+            )
+            return {"results": results, "count": len(results)}
+        except Exception as e:
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:read", "recall_memory", "error", duration_ms,
+                error=str(e),
+            )
+            raise
+
+    @mcp.tool(
+        name="delete_memory",
+        description=(
+            "Soft-delete memories by ID, tags, or time range. "
+            "Bulk deletes require confirm=true. Use dry_run to preview."
+        ),
+    )
+    async def delete_memory(
+        user_id: str,
+        memory_id: str | None = None,
+        tags: list[str] | None = None,
+        time_range: dict | None = None,
+        confirm: bool = False,
+        dry_run: bool = False,
+    ) -> dict:
+        svc = ServiceRegistry.get()
+        access_err = await svc.check_access(user_id, "delete_memory")
+        if access_err:
+            return {"error": access_err}
+        start = time.time()
+        try:
+            result = await svc.memory_service.delete(
+                user_id, memory_id=memory_id, tags=tags,
+                time_range=time_range, confirm=confirm, dry_run=dry_run,
+            )
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:delete", "delete_memory", "success", duration_ms,
+                deleted_count=result["deleted_count"], dry_run=dry_run,
+            )
+            return result
+        except Exception as e:
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "memory:delete", "delete_memory", "error", duration_ms,
+                error=str(e),
+            )
+            raise

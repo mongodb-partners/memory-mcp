@@ -1,46 +1,24 @@
 services:
-  event-logger:
-    image: public.ecr.aws/s2e1n3u8/event-logger:latest
-    env_file:
-      - environment/.env.event-logger
-    networks:
-      - mcp-network
-    environment:
-      - PORT=8181
-  ai-memory:
-    image: public.ecr.aws/s2e1n3u8/ai-memory:latest
-    env_file:
-      - environment/.env.ai-memory
-    depends_on:
-      - event-logger
-    networks:
-      - mcp-network
-    environment:
-      - PORT=8182
-  semantic-cache:
-    image: public.ecr.aws/s2e1n3u8/semantic-cache:latest
-    env_file:
-      - environment/.env.semantic-cache
-    depends_on:
-      - event-logger
-    networks:
-      - mcp-network
-    environment:
-      - PORT=8183
   memory-mcp:
     build: .
-    env_file:
-      - environment/.env.memory-mcp
-    depends_on:
-      - event-logger
-      - ai-memory
-      - semantic-cache
-    networks:
-      - mcp-network
+    image: memory-mcp:latest
+    env_file: .env
     ports:
-      - 8080:8080
+      - "8000:8000"
+    networks:
+      - memory-mcp-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client; c = http.client.HTTPConnection('localhost', 8000, timeout=5); c.request('GET', '/health'); assert c.getresponse().status == 200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
-  mcp-network:
+  memory-mcp-network:
     driver: bridge
-    name: mcp-network

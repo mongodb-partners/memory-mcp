@@ -1,34 +1,26 @@
-# Use the official Python lightweight image
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependency files first for better caching
-COPY pyproject.toml requirements.txt ./
+# Copy project metadata and lockfile first for better layer caching
+COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-RUN uv sync
+# Copy source files needed by the build
+COPY __init__.py .
+COPY __main__.py .
+COPY server.py .
+COPY core/ core/
+COPY providers/ providers/
+COPY services/ services/
+COPY tools/ tools/
+COPY auth/ auth/
 
-# Copy application source code
-COPY src/ ./src/
-COPY services/ ./services/
-COPY tools/ ./tools/
-COPY utils/ ./utils/
+# Install dependencies using locked graph
+RUN uv sync --frozen
 
-# Create logs directory
-RUN mkdir -p logs
+EXPOSE 8000
 
-# Allow statements and log messages to immediately appear in the logs
-ENV PYTHONUNBUFFERED=1
-
-# Install dependencies
-RUN uv sync
-
-EXPOSE 8080
-
-# Run the FastMCP server
-CMD ["uv", "run", "src/server.py"]
+CMD ["uv", "run", "memory-mcp"]

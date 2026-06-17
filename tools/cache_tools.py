@@ -1,63 +1,69 @@
-from typing import Any, Dict, Optional
-import httpx
-from fastmcp import FastMCP
-from src.core import config
-from src.core.logger import logger
-from utils.validators import validate_user_id
+"""MCP Cache Tools — check and store semantic cache."""
 
-def register_cache_tools(mcp: FastMCP):
-    """Register cache-related tools."""
-    
-    @mcp.tool(
-        name="semantic_cache_response", description="Cache AI response for similar queries"
-    )
-    async def semantic_cache_response(
-        user_id: str, query: str, response: str, timestamp: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Cache an AI response for future similar queries."""
-        
-        user_id = validate_user_id(user_id)
+import time
 
-        payload = {
-            "user_id": user_id,
-            "query": query,
-            "response": response,
-        }
+from memory_mcp.core.registry import ServiceRegistry
 
-        if timestamp:
-            payload["timestamp"] = timestamp
 
-        client = httpx.AsyncClient(timeout=300.0)
-        try:
-            response = await client.post(
-                f"{config.SEMANTIC_CACHE_SERVICE_URL}/save_to_cache", json=payload
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            logger.error(f"Error: {e.response.status_code} - {e.response.text}")
-            return {"error": str(e)}
+def register_cache_tools(mcp):
+    """Register cache MCP tools on the FastMCP server."""
 
     @mcp.tool(
-        name="check_semantic_cache", description="Get cached response for similar query"
+        name="check_cache",
+        description=(
+            "Check semantic cache for a similar previous query. "
+            "Returns cached response if similarity >= threshold."
+        ),
     )
-    async def check_semantic_cache(user_id: str, query: str) -> Dict[str, Any]:
-        """Retrieve a cached response for a semantically similar query."""
-        
-        user_id = validate_user_id(user_id)
-
-        payload = {
-            "user_id": user_id,
-            "query": query,
-        }
-
-        client = httpx.AsyncClient(timeout=300.0)
+    async def check_cache(
+        user_id: str,
+        query: str,
+        similarity_threshold: float | None = None,
+    ) -> dict:
+        svc = ServiceRegistry.get()
+        access_err = await svc.check_access(user_id, "check_cache")
+        if access_err:
+            return {"error": access_err}
+        start = time.time()
         try:
-            response = await client.post(
-                f"{config.SEMANTIC_CACHE_SERVICE_URL}/read_cache", json=payload
+            result = await svc.cache_service.check(
+                user_id, query, similarity_threshold=similarity_threshold,
             )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            logger.error(f"Error: {e.response.status_code} - {e.response.text}")
-            return {"error": str(e)}
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "cache:read", "check_cache", "success", duration_ms,
+                cache_hit=result is not None,
+            )
+            return result or {"cache_hit": False}
+        except Exception as e:
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "cache:read", "check_cache", "error", duration_ms,
+                error=str(e),
+            )
+            raise
+
+    @mcp.tool(
+        name="store_cache",
+        description="Cache a query-response pair for future similarity lookups.",
+    )
+    async def store_cache(user_id: str, query: str, response: str) -> dict:
+        svc = ServiceRegistry.get()
+        access_err = await svc.check_access(user_id, "store_cache")
+        if access_err:
+            return {"error": access_err}
+        start = time.time()
+        try:
+            cache_id = await svc.cache_service.store(user_id, query, response)
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "cache:write", "store_cache", "success", duration_ms,
+            )
+            return {"cache_id": cache_id}
+        except Exception as e:
+            duration_ms = int((time.time() - start) * 1000)
+            await svc.audit_service.log(
+                user_id, "cache:write", "store_cache", "error", duration_ms,
+                error=str(e),
+            )
+            raise
