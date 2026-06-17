@@ -4,16 +4,16 @@ MongoDB Atlas-backed MCP server for AI memory management with semantic caching, 
 
 ## Installation
 
+Install directly from the git repository with pip (requires git):
+
 ```bash
-pip install memory-mcp
+pip install git+https://github.com/mongodb-partners/memory-mcp.git
 ```
 
-Or install from source using [uv](https://docs.astral.sh/uv/):
+Or install using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-git clone https://github.com/mongodb-partners/memory-mcp.git
-cd memory-mcp
-uv sync
+uv add git+https://github.com/mongodb-partners/memory-mcp.git 
 ```
 
 ## Quick Start
