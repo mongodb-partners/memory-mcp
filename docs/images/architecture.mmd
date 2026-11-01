@@ -1,0 +1,22 @@
+---
+title: Memory-MCP architecture
+---
+flowchart LR
+  AG["AI agent<br/>MCP client"]
+  subgraph srv[Memory-MCP server]
+    MW["Auth, governance,<br/>rate limit, auto-capture"]
+    T["MCP tools<br/>memory, cache, decisions, search"]
+    W["Background workers<br/>enrichment, consolidation, audit flush"]
+  end
+  subgraph prov[Providers]
+    BR["AWS Bedrock<br/>Titan embeddings, Claude"]
+    VY["Voyage AI"]
+  end
+  DB[("MongoDB Atlas<br/>vector and full-text search")]
+  AG --> MW
+  MW --> T
+  T --> DB
+  T --> BR
+  T --> VY
+  W --> DB
+  W --> BR
