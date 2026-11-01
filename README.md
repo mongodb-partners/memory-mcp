@@ -123,6 +123,9 @@ See [docs/api-reference.md](docs/api-reference.md) for full tool signatures and 
 
 ## Architecture
 
+![Architecture](docs/images/architecture.svg)
+
+
 Memory-MCP runs as a single FastMCP process with the following internal services:
 
 - **MemoryService**: STM/LTM storage, recall with calibrated ranking, soft-delete
